@@ -19,61 +19,28 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
-        with:
-          packages: 'platform-tools'
+
+      - name: Install Android 35 SDK
+        run: |
+          yes | sdkmanager --licenses || true
+          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: '8.9'
 
-      - name: Find and Extract Project
+      - name: Extract Project
         run: |
-          echo "===== Repository files ====="
-          ls -la
-
-          echo "===== ZIP files ====="
-          find . -type f -iname "*.zip" -print
-
-          ZIP_FILE=$(find . -type f -iname "*.zip" | head -n 1)
-
-          if [ -z "$ZIP_FILE" ]; then
-            echo "ERROR: No ZIP file found!"
-            exit 1
-          fi
-
-          echo "Using ZIP: $ZIP_FILE"
-
-          unzip -o "$ZIP_FILE"
-
-          echo "===== Extracted files ====="
-          find . -maxdepth 4 -type f | sort
-
-      - name: Find Android Project
-        run: |
-          PROJECT_DIR=$(find . -type f -name "settings.gradle*" -printf '%h\n' | head -n 1)
-
-          if [ -z "$PROJECT_DIR" ]; then
-            echo "ERROR: Android project not found!"
-            echo "Searching for build.gradle files:"
-            find . -type f -name "build.gradle*" -print
-            exit 1
-          fi
-
-          echo "Android project found at: $PROJECT_DIR"
-          echo "$PROJECT_DIR" > project_dir.txt
+          unzip -o CricketAuctionPorbandar_PhoneBuild_Package.zip
 
       - name: Build APK
         run: |
-          PROJECT_DIR=$(cat project_dir.txt)
-          cd "$PROJECT_DIR"
-
-          echo "===== Building Android APK ====="
+          cd CricketAuctionPorbandar_Demo
           gradle assembleDebug --stacktrace
 
       - name: Find APK
         run: |
-          echo "===== APK files ====="
           find . -type f -name "*.apk" -print
 
       - name: Upload APK
