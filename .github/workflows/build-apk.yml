@@ -28,10 +28,35 @@ jobs:
           gradle-version: '8.9'
 
       - name: Extract project
-        run: |
-          unzip -o CricketAuctionPorbandar_PhoneBuild_Package.zip
-          cd CricketAuctionPorbandar_Demo
-          gradle assembleDebug
+  run: |
+    echo "Files in repository:"
+    ls -la
+    find . -maxdepth 2 -type f | sort
+
+    ZIP_FILE=$(find . -maxdepth 2 -type f -iname "*.zip" | head -n 1)
+
+    if [ -z "$ZIP_FILE" ]; then
+      echo "ERROR: No ZIP file found in repository"
+      exit 1
+    fi
+
+    echo "Using ZIP: $ZIP_FILE"
+    unzip -o "$ZIP_FILE"
+
+    echo "Extracted files:"
+    find . -maxdepth 3 -type f | sort
+
+    PROJECT_DIR=$(find . -maxdepth 2 -type f -name "settings.gradle*" -printf '%h\n' | head -n 1)
+
+    if [ -z "$PROJECT_DIR" ]; then
+      echo "ERROR: Android project not found"
+      exit 1
+    fi
+
+    echo "Project directory: $PROJECT_DIR"
+    cd "$PROJECT_DIR"
+    gradle assembleDebug
+
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
