@@ -9,20 +9,17 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
 
       - name: Setup Java 17
         uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '17'
-          cache: gradle
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v4
-
-      - name: Install Android SDK 35
         run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
           yes | sdkmanager --licenses || true
           sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 
@@ -31,12 +28,15 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: Check Project
+      - name: Extract Project
         run: |
-          echo "===== Files ====="
-          ls -la
-          echo "===== Project ====="
-          find . -maxdepth 3 -type f | sort
+          echo "ZIP files:"
+          ls -lh *.zip
+
+          unzip -o CricketAuctionPorbandar_Clean_New.zip
+
+          echo "Extracted project:"
+          find CricketAuctionPorbandar -maxdepth 2 -type f | sort
 
       - name: Build APK
         run: |
@@ -44,13 +44,13 @@ jobs:
             -p CricketAuctionPorbandar \
             assembleDebug
 
-      - name: Find APK
+      - name: Check APK
         run: |
-          find CricketAuctionPorbandar -type f -name "*.apk" -print
+          ls -lh CricketAuctionPorbandar/app/build/outputs/apk/debug/
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: CricketAuctionPorbandar-debug-apk
+          name: CricketAuctionPorbandar-APK
           path: CricketAuctionPorbandar/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
