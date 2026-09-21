@@ -27,39 +27,58 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: Extract project
-  run: |
-    echo "Files in repository:"
-    ls -la
-    find . -maxdepth 2 -type f | sort
+      - name: Find and Extract Project
+        run: |
+          echo "===== Repository files ====="
+          ls -la
 
-    ZIP_FILE=$(find . -maxdepth 2 -type f -iname "*.zip" | head -n 1)
+          echo "===== ZIP files ====="
+          find . -type f -iname "*.zip" -print
 
-    if [ -z "$ZIP_FILE" ]; then
-      echo "ERROR: No ZIP file found in repository"
-      exit 1
-    fi
+          ZIP_FILE=$(find . -type f -iname "*.zip" | head -n 1)
 
-    echo "Using ZIP: $ZIP_FILE"
-    unzip -o "$ZIP_FILE"
+          if [ -z "$ZIP_FILE" ]; then
+            echo "ERROR: No ZIP file found!"
+            exit 1
+          fi
 
-    echo "Extracted files:"
-    find . -maxdepth 3 -type f | sort
+          echo "Using ZIP: $ZIP_FILE"
 
-    PROJECT_DIR=$(find . -maxdepth 2 -type f -name "settings.gradle*" -printf '%h\n' | head -n 1)
+          unzip -o "$ZIP_FILE"
 
-    if [ -z "$PROJECT_DIR" ]; then
-      echo "ERROR: Android project not found"
-      exit 1
-    fi
+          echo "===== Extracted files ====="
+          find . -maxdepth 4 -type f | sort
 
-    echo "Project directory: $PROJECT_DIR"
-    cd "$PROJECT_DIR"
-    gradle assembleDebug
+      - name: Find Android Project
+        run: |
+          PROJECT_DIR=$(find . -type f -name "settings.gradle*" -printf '%h\n' | head -n 1)
 
+          if [ -z "$PROJECT_DIR" ]; then
+            echo "ERROR: Android project not found!"
+            echo "Searching for build.gradle files:"
+            find . -type f -name "build.gradle*" -print
+            exit 1
+          fi
+
+          echo "Android project found at: $PROJECT_DIR"
+          echo "$PROJECT_DIR" > project_dir.txt
+
+      - name: Build APK
+        run: |
+          PROJECT_DIR=$(cat project_dir.txt)
+          cd "$PROJECT_DIR"
+
+          echo "===== Building Android APK ====="
+          gradle assembleDebug --stacktrace
+
+      - name: Find APK
+        run: |
+          echo "===== APK files ====="
+          find . -type f -name "*.apk" -print
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: CricketAuctionPorbandar-APK
-          path: CricketAuctionPorbandar_Demo/app/build/outputs/apk/debug/*.apk
+          path: '**/build/outputs/apk/debug/*.apk'
+          if-no-files-found: error
